@@ -6,51 +6,51 @@ require(pacman)
 
 ## llamar y/o instalar librerias
 p_load(tidyverse,rio,skimr,
+       ggmap,
        sf, ## datos espaciales
        leaflet, ## visualizaciones
        tmaptools, ## geocodificar
        ggsn, ## map scale bar 
        osmdata) ## packages with census data
 
-### **4.1 Acerca de OpenStreetMap**
-
-### **4.2. Geocodificar direcciones**
-
-## Buscar un lugar público por el nombre
+### **Geocodificar direcciones**
 geocode_OSM("Casa de Nariño, Bogotá")
 
-## geocode_OSM no reconoce el caracter #, en su lugar se usa %23% 
+casa_narino = geocode_OSM("Casa de Narino, Bogota",as.sf=T)
+
+leaflet() %>% addTiles() %>% addCircles(data=casa_narino)
+
 cbd <- geocode_OSM("Centro Internacional, Bogotá", as.sf=T) 
 cbd
-
-## la función addTiles adiciona la capa de OpenStreetMap
 leaflet() %>% addTiles() %>% addCircles(data=cbd)
 
-### **4.3. Librería `osmdata`**
 
 #### **4.3.1. Features disponibles**
 
 available_features() %>% head(20)
 
-available_tags("amenity") %>% head(20)
+available_tags("boundary") 
 
 ### **4.4. Descargar features**
   
-## obtener la caja de coordenada que contiene el polígono de Bogotá
-opq(bbox = getbb("Bogotá Colombia"))
+##OSM para Santa Marta
+getbb("SAnta Marta, Colombia")
+opq(bbox = getbb("Santa Marta, Colombia"))
 
-## objeto osm
-osm = opq(bbox = getbb("Bogotá Colombia")) %>%
-      add_osm_feature(key="amenity" , value="bus_station") 
+
+## Objeto osm
+osm = opq(bbox = getbb("Santa Marta, Colombia")) %>%
+      add_osm_feature(key="amenity" , value="restaurant") 
 class(osm)
 
-## extraer Simple Features Collection
 osm_sf = osm %>% osmdata_sf()
 osm_sf
 
-## Obtener un objeto sf
-bus_station = osm_sf$osm_points %>% select(osm_id,amenity) 
-bus_station
+restaurants = osm_sf$osm_points
+leaflet() %>% addTiles() %>% addCircleMarkers(data=restaurants)
+
+
+
 
 ## Pintar las estaciones de autobus
 leaflet() %>% addTiles() %>% addCircleMarkers(data=bus_station , col="red")
@@ -132,11 +132,11 @@ my_house$dist_parque = mean_dist_parque
   
 ## get Bogota-UPZ 
 bog <- opq(bbox = getbb("Bogota Colombia")) %>%
-      add_osm_feature(key="boundary", value="administrative") %>% 
-      osmdata_sf()
+       add_osm_feature(key="boundary", value="administrative") %>% 
+       osmdata_sf()
 bog <- bog$osm_multipolygons %>% subset(admin_level==9)
 
-bog <- import("output/bog_upz.rds")
+bog <- export(bog,"output/bog_upz.rds")
 
 ## basic plot
 ggplot() + geom_sf(data=bog)
